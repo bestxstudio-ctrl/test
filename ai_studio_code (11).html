@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nutri-App Interactive Prototype</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --bg-color: #F4F6F8; --white: #FFFFFF; --dark: #1A202C; --dark-nav: #111928;
+            --green: #10B981; --green-shadow: #059669; --green-light: #D1FAE5;
+            --orange: #F59E0B; --orange-shadow: #D97706;
+            --blue: #3B82F6; --purple: #8B5CF6; --purple-light: #EDE9FE;
+            --gray: #9CA3AF; --gray-light: #E5E7EB;
+            --text-main: #1F2937; --text-sub: #6B7280;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Nunito', sans-serif; }
+
+        body {
+            background-color: #cbd5e1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            gap: 50px;
+        }
+
+        .clickable { cursor: pointer; transition: transform 0.1s, opacity 0.2s; }
+        .clickable:hover { opacity: 0.85; transform: scale(0.98); }
+        .clickable:active { transform: scale(0.95); }
+        
+        .app-container { position: relative; }
+        .phone {
+            width: 350px; height: 740px; background-color: var(--bg-color);
+            border-radius: 45px; border: 12px solid var(--white);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+            position: relative; overflow: hidden; display: flex; flex-direction: column;
+        }
+
+        .architecture-guide {
+            width: 400px; background: var(--white); border-radius: 20px; padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1); display: flex; flex-direction: column; gap: 15px;
+        }
+        .guide-step { background: #f8fafc; border-left: 4px solid var(--green); padding: 15px; border-radius: 0 10px 10px 0;}
+        .guide-step h4 { color: var(--dark); font-size: 15px; margin-bottom: 5px; }
+        .guide-step p { color: var(--text-sub); font-size: 13px; line-height: 1.4;}
+
+        .notch { position: absolute; top: 12px; left: 50%; transform: translateX(-50%); width: 110px; height: 28px; background-color: #000; border-radius: 20px; z-index: 100; }
+
+        .screen { display: none; flex-direction: column; height: 100%; width: 100%; animation: fadeIn 0.3s ease; }
+        .screen.active { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        .header { padding: 50px 20px 15px; display: flex; justify-content: space-between; align-items: center; z-index: 10; position: relative; }
+        .content { flex: 1; overflow-y: auto; padding: 0 20px 90px; }
+        .content::-webkit-scrollbar { display: none; }
+
+        .btn-duo { background-color: var(--green); color: var(--white); font-weight: 800; font-size: 16px; border: none; border-radius: 16px; padding: 15px 20px; box-shadow: 0 5px 0 var(--green-shadow); cursor: pointer; width: 100%; text-align: center; }
+        .btn-secondary { background-color: var(--white); color: var(--text-main); box-shadow: 0 5px 0 var(--gray-light); border: 2px solid var(--gray-light); }
+        .card { background: var(--white); border-radius: 20px; padding: 15px; margin-bottom: 15px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05); }
+        .back-btn { font-size: 20px; color: var(--text-main); cursor: pointer; padding: 5px; }
+
+        .bottom-nav { position: absolute; bottom: 20px; left: 20px; right: 20px; height: 65px; background-color: var(--dark-nav); border-radius: 25px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; box-shadow: 0 10px 20px rgba(0,0,0,0.15); z-index: 50; }
+        .bottom-nav i { color: var(--gray); font-size: 20px; padding: 10px; cursor: pointer; transition: color 0.2s; }
+        .bottom-nav i.active { color: var(--white); }
+        .nav-fab { width: 50px; height: 50px; background: var(--green); border-radius: 50%; display: flex; justify-content: center; align-items: center; box-shadow: 0 5px 0 var(--green-shadow); transform: translateY(-15px); cursor: pointer; }
+        .nav-fab i { color: var(--white) !important; padding: 0; }
+
+        .mascot { font-size: 70px; color: var(--green); margin-bottom: 20px; animation: bounce 2s infinite; }
+        @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        
+        .user-info { display: flex; align-items: center; gap: 10px; }
+        .avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .coin-pill { background: var(--white); padding: 5px 10px; border-radius: 20px; font-weight: bold; color: var(--orange); box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 5px; }
+        .alert-card { background: var(--green-light); border-radius: 20px; padding: 15px; position: relative; border: 2px solid var(--green); }
+        
+        /* НОВЫЙ ДИЗАЙН: Календарь и Круговые диаграммы */
+        .calendar-row { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 15px; padding: 0 2px; }
+        .day-box { background: var(--white); border-radius: 12px; padding: 8px 5px; text-align: center; flex: 1; border: 2px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.02); }
+        .day-box.active { background: var(--dark-nav); border-color: var(--dark-nav); color: var(--white); }
+        .day-box p:first-child { font-size: 11px; color: var(--text-sub); }
+        .day-box.active p:first-child { color: var(--gray); }
+        .day-box p:last-child { font-weight: 800; font-size: 14px; margin-top: 2px; }
+
+        .summary-card { background: var(--white); border-radius: 24px; padding: 18px 15px; margin-bottom: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .summary-title { font-size: 15px; font-weight: 800; margin-bottom: 15px; color: var(--dark-nav); }
+        .circles-row { display: flex; justify-content: space-between; align-items: flex-end; }
+        
+        .circle-wrapper { text-align: center; flex: 1; display: flex; flex-direction: column; align-items: center; }
+        .circle-svg-container { position: relative; width: 65px; height: 65px; margin-bottom: 8px; }
+        .circular-chart { display: block; margin: 0 auto; width: 100%; height: 100%; }
+        .circle-bg { fill: none; stroke: var(--gray-light); stroke-width: 3.5; }
+        .circle { fill: none; stroke-width: 3.5; stroke-linecap: round; transform: rotate(-90deg); transform-origin: 50% 50%; transition: stroke-dasharray 1s ease-out; }
+        
+        .circle-icon { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 20px; }
+        
+        .water-ring { stroke: var(--blue); stroke-dasharray: 60, 100; }
+        .cals-ring { stroke: var(--green); stroke-dasharray: 75, 100; }
+        .steps-ring { stroke: var(--orange); stroke-dasharray: 45, 100; }
+        
+        /* Scanner, Chat, EWMA - Без изменений */
+        .scanner-bg { position: absolute; top: 0; left: 0; right: 0; height: 60%; background: url('https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600&q=80') center/cover; z-index: 1;}
+        .scanner-overlay { position: absolute; top: 0; left: 0; right: 0; height: 60%; background: rgba(0,0,0,0.3); z-index: 2; }
+        .bottom-sheet { position: absolute; bottom: 0; left: 0; right: 0; height: 45%; background: var(--white); border-radius: 30px 30px 0 0; z-index: 3; padding: 25px 20px; display: flex; flex-direction: column;}
+        
+        .chat-area { display: flex; flex-direction: column; gap: 15px; margin-bottom: 60px; }
+        .msg { max-width: 80%; padding: 12px 15px; border-radius: 18px; font-size: 14px; }
+        .msg-doc { background: var(--white); border-bottom-left-radius: 5px; align-self: flex-start; }
+        .msg-me { background: var(--dark-nav); color: var(--white); border-bottom-right-radius: 5px; align-self: flex-end; }
+        
+        .ewma-card { background: linear-gradient(135deg, #F3E8FF 0%, #E9D5FF 100%); border: 2px solid #D8B4FE; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <div class="phone">
+            <div class="notch"></div>
+
+            <!-- ЭКРАН 1: ОНБОРДИНГ -->
+            <div id="s-onboarding" class="screen active">
+                <div style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100%; padding: 20px; text-align: center;">
+                    <i class="fa-solid fa-leaf mascot"></i>
+                    <h1 style="font-size: 24px; color: var(--dark-nav); margin-bottom: 10px;">Добро пожаловать!</h1>
+                    <p style="color: var(--text-sub); margin-bottom: 40px; font-size: 14px;">Научный подход к питанию и БАДам без неврозов и сложных подсчетов.</p>
+                    <div style="width: 100%; display: flex; flex-direction: column; gap: 15px;">
+                        <button class="btn-duo clickable" onclick="nav('s-dashboard')">У меня есть куратор</button>
+                        <button class="btn-duo btn-secondary clickable" onclick="nav('s-dashboard')">Я буду худеть сам</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ЭКРАН 2: DASHBOARD (ОБНОВЛЕННЫЙ) -->
+            <div id="s-dashboard" class="screen">
+                <div class="header">
+                    <div class="user-info">
+                        <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&q=80" class="avatar">
+                        <div>
+                            <p style="font-size: 10px; color: var(--text-sub);">С возвращением,</p>
+                            <h3 style="font-size: 14px;">Анна Волкова</h3>
+                        </div>
+                    </div>
+                    <div class="coin-pill clickable" onclick="nav('s-profile')"><i class="fa-solid fa-coins"></i> 450</div>
+                </div>
+                <div class="content">
+                    
+                    <!-- Календарь -->
+                    <div class="calendar-row">
+                        <div class="day-box"><p>Вт</p><p>14</p></div>
+                        <div class="day-box"><p>Ср</p><p>15</p></div>
+                        <div class="day-box active"><p>Чт</p><p>16</p></div>
+                        <div class="day-box"><p>Пт</p><p>17</p></div>
+                        <div class="day-box"><p>Сб</p><p>18</p></div>
+                    </div>
+
+                    <!-- Сводка: Круговые диаграммы -->
+                    <div class="summary-card">
+                        <h3 class="summary-title">Сводка за сегодня</h3>
+                        <div class="circles-row">
+                            <!-- Вода -->
+                            <div class="circle-wrapper clickable">
+                                <div class="circle-svg-container">
+                                    <svg viewBox="0 0 36 36" class="circular-chart">
+                                        <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                        <path class="circle water-ring" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                    </svg>
+                                    <div class="circle-icon" style="color: var(--blue);"><i class="fa-solid fa-droplet"></i></div>
+                                </div>
+                                <h4 style="font-size: 14px; font-weight: 800; color: var(--dark-nav);">1.2л</h4>
+                                <p style="font-size: 10px; color: var(--gray); text-transform: uppercase; font-weight: 800;">Вода</p>
+                            </div>
+                            
+                            <!-- Калории -->
+                            <div class="circle-wrapper clickable" onclick="nav('s-logger')">
+                                <div class="circle-svg-container">
+                                    <svg viewBox="0 0 36 36" class="circular-chart">
+                                        <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                        <path class="circle cals-ring" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                    </svg>
+                                    <div class="circle-icon" style="color: var(--green);"><i class="fa-solid fa-bolt"></i></div>
+                                </div>
+                                <h4 style="font-size: 14px; font-weight: 800; color: var(--dark-nav);">1450</h4>
+                                <p style="font-size: 10px; color: var(--gray); text-transform: uppercase; font-weight: 800;">Ккал</p>
+                            </div>
+
+                            <!-- Шаги -->
+                            <div class="circle-wrapper clickable">
+                                <div class="circle-svg-container">
+                                    <svg viewBox="0 0 36 36" class="circular-chart">
+                                        <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                        <path class="circle steps-ring" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                                    </svg>
+                                    <div class="circle-icon" style="color: var(--orange);"><i class="fa-solid fa-shoe-prints"></i></div>
+                                </div>
+                                <h4 style="font-size: 14px; font-weight: 800; color: var(--dark-nav);">6.4k</h4>
+                                <p style="font-size: 10px; color: var(--gray); text-transform: uppercase; font-weight: 800;">Шаги</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- MacroFactor Карточки (Сплит 50/50) -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px;">
+                        <div class="card clickable" onclick="nav('s-ewma')" style="border: 2px solid #D8B4FE; background: #FAF5FF; margin-bottom: 0; padding: 12px; text-align: center;">
+                            <p style="font-size: 10px; color: var(--purple); text-transform: uppercase; font-weight: bold; margin-bottom: 2px;"><i class="fa-solid fa-chart-line"></i> Тренд веса</p>
+                            <h4 style="font-size: 18px; color: var(--purple);">70.8 кг</h4>
+                        </div>
+                        <div class="card clickable" onclick="nav('s-checkin')" style="border: 2px solid var(--blue); background: #EFF6FF; margin-bottom: 0; padding: 12px; text-align: center;">
+                            <p style="font-size: 10px; color: var(--blue); text-transform: uppercase; font-weight: bold; margin-bottom: 2px;"><i class="fa-solid fa-robot"></i> Метаболизм</p>
+                            <h4 style="font-size: 18px; color: var(--blue);">2450 <span style="font-size:12px;">ккал</span></h4>
+                        </div>
+                    </div>
+
+                    <!-- MLM + Pillbox Trigger -->
+                    <div class="alert-card clickable" onclick="nav('s-pillbox')">
+                        <i class="fa-regular fa-bell" style="position: absolute; right: 15px; top: 15px; color: var(--green-shadow); font-size: 18px;"></i>
+                        <h3 style="color: var(--green-shadow); font-size: 12px; text-transform: uppercase;">Пора принять БАДы</h3>
+                        <h2 style="color: var(--dark-nav); font-size: 16px; margin-bottom: 5px;">Витамин D3 (5000 МЕ)</h2>
+                        <p style="color: var(--text-sub); font-size: 12px; margin-bottom: 10px;">Усваивается лучше после плотного обеда с жирами.</p>
+                        <button class="btn-duo" style="padding: 10px; font-size: 14px;"><i class="fa-solid fa-check"></i> Выпито</button>
+                    </div>
+                </div>
+                
+                <!-- Bottom Nav -->
+                <div class="bottom-nav">
+                    <i class="fa-solid fa-house active"></i>
+                    <i class="fa-solid fa-clipboard-list clickable" onclick="nav('s-logger')"></i>
+                    <div class="nav-fab clickable" onclick="nav('s-scanner')"><i class="fa-solid fa-camera"></i></div>
+                    <i class="fa-solid fa-calendar-check clickable" onclick="nav('s-protocol')"></i>
+                    <i class="fa-solid fa-user clickable" onclick="nav('s-profile')"></i>
+                </div>
+            </div>
+
+            <!-- ЭКРАН 3: SCANNER -->
+            <div id="s-scanner" class="screen">
+                <div class="scanner-bg"></div>
+                <div class="scanner-overlay">
+                    <div class="clickable" onclick="goBack()" style="position: absolute; top: 50px; left: 20px; background: rgba(255,255,255,0.2); width: 35px; height: 35px; border-radius: 50%; display: flex; justify-content: center; align-items: center; color: white;"><i class="fa-solid fa-xmark"></i></div>
+                    <div style="position: absolute; top: 50px; right: 20px; background: rgba(0,0,0,0.5); padding: 5px 12px; border-radius: 20px; color: white; font-size: 12px;"><i class="fa-solid fa-wand-magic-sparkles" style="color: var(--orange);"></i> BioAI</div>
+                </div>
+                <div class="bottom-sheet">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <h1 style="font-size: 28px;">420 <span style="font-size: 14px; color: var(--text-sub);">ккал</span></h1>
+                        <div style="background: var(--green-light); color: var(--green-shadow); padding: 5px 10px; border-radius: 10px; font-size: 12px; font-weight: bold;">Отличный выбор</div>
+                    </div>
+                    <p style="font-size: 14px; color: var(--text-sub); margin-bottom: 20px;">Распознано: Лосось на гриле, киноа, авокадо.</p>
+                    <div style="margin-top: auto;">
+                        <button class="btn-duo clickable" onclick="nav('s-logger')" style="background: var(--dark-nav); box-shadow: 0 4px 0 #000;">Добавить в дневник</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ЭКРАН 4: LOGGER (ADHERENCE NEUTRAL) -->
+            <div id="s-logger" class="screen">
+                <div class="header">
+                    <h3 style="font-size: 20px;">Дневник</h3>
+                    <i class="fa-solid fa-calendar-day" style="color: var(--gray);"></i>
+                </div>
+                <div class="content">
+                    <div class="card clickable" onclick="nav('s-profile')" style="background: linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%); border: 2px solid #FDE68A; text-align: center;">
+                        <i class="fa-solid fa-fire" style="font-size: 30px; color: var(--orange); margin-bottom: 10px;"></i>
+                        <h2 style="color: var(--orange-shadow); font-size: 16px;">Дневник заполнен!</h2>
+                        <p style="font-size: 12px; color: var(--text-sub); margin-bottom: 10px;">Главное — честность, а не идеальные цифры!</p>
+                        <div style="display: inline-block; background: var(--white); color: var(--orange); font-weight: bold; padding: 5px 15px; border-radius: 20px; font-size: 12px;">+15 NutriCoins</div>
+                    </div>
+                    <h3 style="margin: 15px 0 10px; font-size: 16px;">Обед <span style="color: var(--gray); font-size: 14px; float: right;">420 ккал</span></h3>
+                    <div class="card" style="padding: 15px; border-left: 4px solid var(--green);">
+                        <h4 style="font-size: 15px;">Лосось с киноа (AI)</h4>
+                        <p style="font-size: 12px; color: var(--text-sub);">Б: 32г • Ж: 24г • У: 18г</p>
+                    </div>
+                    <button class="btn-duo btn-secondary clickable" onclick="nav('s-scanner')" style="border-style: dashed;"><i class="fa-solid fa-plus"></i> Добавить ужин</button>
+                </div>
+                <div class="bottom-nav">
+                    <i class="fa-solid fa-house clickable" onclick="nav('s-dashboard')"></i>
+                    <i class="fa-solid fa-clipboard-list active"></i>
+                    <div class="nav-fab clickable" onclick="nav('s-scanner')"><i class="fa-solid fa-camera"></i></div>
+                    <i class="fa-solid fa-calendar-check clickable" onclick="nav('s-protocol')"></i>
+                    <i class="fa-solid fa-user clickable" onclick="nav('s-profile')"></i>
+                </div>
+            </div>
+
+            <!-- ЭКРАН 5: PROTOCOL -->
+            <div id="s-protocol" class="screen">
+                <div class="header">
+                    <h2 style="font-size: 22px;">Протокол</h2>
+                    <div class="clickable" onclick="nav('s-chat')" style="position: relative;">
+                        <img src="https://images.unsplash.com/photo-1559839734-2b71ea197ec2?w=100&q=80" style="width: 35px; height: 35px; border-radius: 50%;">
+                        <div style="position: absolute; top: -2px; right: -2px; width: 12px; height: 12px; background: red; border-radius: 50%; border: 2px solid white;"></div>
+                    </div>
+                </div>
+                <div class="content">
+                    <div class="card" style="background: var(--green); color: var(--white); display: flex; align-items: center; gap: 15px; margin-bottom: 25px;">
+                        <div style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid var(--white); display: flex; justify-content: center; align-items: center; font-weight: bold;">94%</div>
+                        <div>
+                            <h3 style="font-size: 16px;">Индекс привычек</h3>
+                            <p style="font-size: 11px; color: var(--green-light);">Куратор вами гордится!</p>
+                        </div>
+                    </div>
+                    
+                    <h3 style="margin-bottom: 15px; font-size: 16px;">План на сегодня</h3>
+                    <div class="card clickable" onclick="nav('s-pillbox')" style="border: 2px solid var(--green-light); background: #F0FDF4;">
+                        <h4 style="font-size: 15px; color: var(--green-shadow);">БАДы в обед (Сейчас)</h4>
+                        <p style="font-size: 12px; color: var(--green);">Omega-3, D3 Liposomal</p>
+                    </div>
+                    <div class="card">
+                        <h4 style="font-size: 15px; color: var(--gray);">Подготовка ко сну (22:00)</h4>
+                        <p style="font-size: 12px; color: var(--gray);">Магний Хелат, Медитация</p>
+                    </div>
+                </div>
+                <div class="bottom-nav">
+                    <i class="fa-solid fa-house clickable" onclick="nav('s-dashboard')"></i>
+                    <i class="fa-solid fa-clipboard-list clickable" onclick="nav('s-logger')"></i>
+                    <div class="nav-fab clickable" onclick="nav('s-scanner')"><i class="fa-solid fa-camera"></i></div>
+                    <i class="fa-solid fa-calendar-check active"></i>
+                    <i class="fa-solid fa-user clickable" onclick="nav('s-profile')"></i>
+                </div>
+            </div>
+
+            <!-- ЭКРАН 6: CHAT & MLM UPSELL -->
+            <div id="s-chat" class="screen">
+                <div class="header" style="background: var(--white); box-shadow: 0 2px 10px rgba(0,0,0,0.05); padding-top: 40px;">
+                    <i class="fa-solid fa-arrow-left back-btn clickable" onclick="goBack()"></i>
+                    <div style="text-align: center;">
+                        <h3 style="font-size: 15px;">Доктор Елена</h3>
+                        <p style="font-size: 11px; color: var(--green);">Онлайн</p>
+                    </div>
+                    <i class="fa-solid fa-phone" style="color: var(--gray);"></i>
+                </div>
+                <div class="content" style="padding-top: 20px;">
+                    <div class="chat-area">
+                        <div class="msg msg-doc">Анна, привет! Как дела с магнием? Закончился?</div>
+                        <div class="msg msg-me">Да, вчера выпила последнюю капсулу.</div>
+                        <div class="msg msg-doc">Добавила тебе в корзину хелатную форму. Заказывай по кнопке ниже 👇</div>
+                        
+                        <div class="card msg-doc clickable" style="border: 2px solid var(--green-light); padding: 12px; display: flex; align-items: center; gap: 10px; width: 90%;">
+                            <div style="background: #e0f2fe; width: 40px; height: 40px; border-radius: 10px; display: flex; justify-content: center; align-items: center; color: var(--blue);"><i class="fa-solid fa-capsules"></i></div>
+                            <div style="flex: 1;">
+                                <h4 style="font-size: 12px;">Магний Хелат PRO</h4>
+                                <p style="font-size: 12px; font-weight: bold; color: var(--green);">1 250 ₽</p>
+                            </div>
+                            <button style="background: var(--dark-nav); color: white; border: none; padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: bold;">Купить</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ЭКРАН 7: PILLBOX / INVENTORY -->
+            <div id="s-pillbox" class="screen">
+                <div class="header">
+                    <i class="fa-solid fa-arrow-left back-btn clickable" onclick="goBack()"></i>
+                    <h2 style="font-size: 20px;">Аптечка</h2>
+                    <div style="width: 24px;"></div>
+                </div>
+                <div class="content">
+                    <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 20px;">Приложение само считает остаток капсул.</p>
+                    
+                    <div class="card" style="display: flex; align-items: center; gap: 15px;">
+                        <div style="width: 45px; height: 45px; border-radius: 12px; background: var(--green-light); color: var(--green); display: flex; justify-content: center; align-items: center; font-size: 20px;"><i class="fa-solid fa-sun"></i></div>
+                        <div style="flex: 1;">
+                            <h4 style="font-size: 15px;">Витамин D3</h4>
+                            <div style="width: 100%; height: 6px; background: var(--gray-light); border-radius: 3px; margin: 5px 0;"><div style="height: 100%; background: var(--green); width: 80%; border-radius: 3px;"></div></div>
+                            <p style="font-size: 11px; color: var(--text-sub);">Осталось: 45 капсул</p>
+                        </div>
+                    </div>
+
+                    <div class="card" style="display: flex; align-items: center; gap: 15px; border: 2px solid #FEE2E2;">
+                        <div style="width: 45px; height: 45px; border-radius: 12px; background: #FEE2E2; color: #EF4444; display: flex; justify-content: center; align-items: center; font-size: 20px;"><i class="fa-solid fa-fish"></i></div>
+                        <div style="flex: 1;">
+                            <h4 style="font-size: 15px;">Омега-3 Premium</h4>
+                            <div style="width: 100%; height: 6px; background: var(--gray-light); border-radius: 3px; margin: 5px 0;"><div style="height: 100%; background: #EF4444; width: 15%; border-radius: 3px;"></div></div>
+                            <p style="font-size: 11px; color: #EF4444; font-weight: bold;">Осталось: 4 капсулы</p>
+                        </div>
+                    </div>
+                    <button class="btn-duo clickable" style="margin-top: 10px; background: var(--dark-nav); box-shadow: 0 4px 0 #000;"><i class="fa-solid fa-cart-shopping"></i> Пополнить запасы</button>
+                </div>
+            </div>
+
+            <!-- ЭКРАН 8: PROFILE / GAMIFICATION -->
+            <div id="s-profile" class="screen">
+                <div class="header">
+                    <h2 style="font-size: 22px;">Профиль</h2>
+                    <i class="fa-solid fa-gear" style="font-size: 20px; color: var(--gray);"></i>
+                </div>
+                <div class="content">
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <i class="fa-solid fa-fire mascot" style="color: var(--orange); font-size: 50px;"></i>
+                        <h2 style="font-size: 20px;">7 дней подряд!</h2>
+                        <p style="color: var(--text-sub); font-size: 13px;">Множитель коинов: x1.5</p>
+                    </div>
+                    <div class="card" style="text-align: center; margin-bottom: 20px;">
+                        <h3 style="font-size: 14px; color: var(--text-sub);">Баланс NutriCoins</h3>
+                        <div style="font-size: 28px; font-weight: 800; color: var(--orange);"><i class="fa-solid fa-coins"></i> 1 250</div>
+                    </div>
+                    <h3 style="font-size: 15px; margin-bottom: 10px;">Магазин наград</h3>
+                    <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 12px;">
+                        <div>
+                            <h4 style="font-size: 13px;">Скидка на куратора 10%</h4>
+                            <p style="font-size: 10px; color: var(--text-sub);">Оплата ведения</p>
+                        </div>
+                        <div style="background: var(--orange); color: white; font-weight: bold; padding: 5px 10px; border-radius: 10px; font-size: 12px;">500 NC</div>
+                    </div>
+                </div>
+                <div class="bottom-nav">
+                    <i class="fa-solid fa-house clickable" onclick="nav('s-dashboard')"></i>
+                    <i class="fa-solid fa-clipboard-list clickable" onclick="nav('s-logger')"></i>
+                    <div class="nav-fab clickable" onclick="nav('s-scanner')"><i class="fa-solid fa-camera"></i></div>
+                    <i class="fa-solid fa-calendar-check clickable" onclick="nav('s-protocol')"></i>
+                    <i class="fa-solid fa-user active"></i>
+                </div>
+            </div>
+
+            <!-- ЭКРАН 9: EWMA TREND -->
+            <div id="s-ewma" class="screen">
+                <div class="header">
+                    <i class="fa-solid fa-arrow-left back-btn clickable" onclick="goBack()"></i>
+                    <h2 style="font-size: 20px;">Тренд веса</h2>
+                    <div class="coin-pill" style="color: #673AB7; font-size: 11px;"><i class="fa-solid fa-chart-line"></i> EWMA</div>
+                </div>
+                <div class="content">
+                    <div class="card ewma-card">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 20px;">
+                            <div>
+                                <p style="font-size: 10px; color: var(--text-sub); text-transform: uppercase;">На весах (Утро)</p>
+                                <h3 style="font-size: 18px; color: #EF4444;">71.5 кг <i class="fa-solid fa-arrow-up" style="font-size: 10px;"></i></h3>
+                            </div>
+                            <div style="text-align: right;">
+                                <p style="font-size: 10px; color: #673AB7; text-transform: uppercase; font-weight: bold;">Истинный тренд</p>
+                                <h3 style="font-size: 22px; color: #673AB7;">70.8 кг <i class="fa-solid fa-arrow-down" style="font-size: 10px;"></i></h3>
+                            </div>
+                        </div>
+                        <svg viewBox="0 0 200 100" style="width: 100%; height: 120px; overflow: visible;">
+                            <line x1="0" y1="20" x2="200" y2="20" stroke="#D8B4FE" stroke-dasharray="4"/>
+                            <line x1="0" y1="50" x2="200" y2="50" stroke="#D8B4FE" stroke-dasharray="4"/>
+                            <line x1="0" y1="80" x2="200" y2="80" stroke="#D8B4FE" stroke-dasharray="4"/>
+                            
+                            <path d="M0,80 Q50,70 100,55 T200,30" fill="none" stroke="#673AB7" stroke-width="4" stroke-linecap="round"/>
+                            
+                            <circle cx="20" cy="75" r="4" fill="#9CA3AF"/>
+                            <circle cx="60" cy="85" r="5" fill="#EF4444"/> 
+                            <circle cx="100" cy="55" r="4" fill="#9CA3AF"/>
+                            <circle cx="140" cy="40" r="4" fill="#9CA3AF"/>
+                            <circle cx="180" cy="50" r="5" fill="#EF4444"/> 
+                            <line x1="180" y1="50" x2="180" y2="35" stroke="#EF4444" stroke-width="2" stroke-dasharray="2"/>
+                            <circle cx="200" cy="30" r="6" fill="#673AB7"/> 
+                        </svg>
+                    </div>
+                    <div class="card" style="border: 2px solid var(--gray-light);">
+                        <h3 style="color: var(--orange); font-size: 14px; margin-bottom: 5px;"><i class="fa-solid fa-hands-bubbles"></i> Без паники!</h3>
+                        <p style="color: var(--text-main); font-size: 12px;">Вес подскочил из-за воды, но ваш истинный жировой тренд уверенно падает. Продолжаем!</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ЭКРАН 10: CHECK-IN (DYNAMIC TDEE) -->
+            <div id="s-checkin" class="screen">
+                <div class="header">
+                    <h2 style="font-size: 22px;">Check-In</h2>
+                    <i class="fa-solid fa-robot" style="font-size: 20px; color: var(--blue);"></i>
+                </div>
+                <div class="content">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div style="width: 70px; height: 70px; background: #DBEAFE; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: 0 auto 10px; border: 4px solid var(--blue);">
+                            <i class="fa-solid fa-bolt" style="font-size: 30px; color: var(--blue);"></i>
+                        </div>
+                        <h2 style="font-size: 18px;">Калибровка алгоритма</h2>
+                    </div>
+                    <div class="card" style="margin-bottom: 15px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <p style="font-size: 13px; font-weight: bold;">Реальный метаболизм (TDEE)</p>
+                            <div style="background: var(--blue); color: white; padding: 3px 8px; border-radius: 8px; font-size: 12px; font-weight: bold;">2450 ккал</div>
+                        </div>
+                        <p style="font-size: 11px; color: var(--text-sub);">Алгоритм зафиксировал метаболическую адаптацию. Ваш расход энергии снизился.</p>
+                    </div>
+                    <div class="card" style="border: 2px solid var(--green-light); background: #F0FDF4;">
+                        <h3 style="font-size: 14px; margin-bottom: 15px; text-align: center;">Новый план на неделю</h3>
+                        <div style="display: flex; justify-content: space-around; margin-bottom: 15px;">
+                            <div style="text-align: center;">
+                                <p style="font-size: 10px; color: var(--green-shadow);">ККАЛ</p>
+                                <h4 style="font-size: 18px; color: var(--dark-nav);">1950</h4>
+                            </div>
+                            <div style="text-align: center;">
+                                <p style="font-size: 10px; color: var(--gray);">БЕЛКИ</p>
+                                <h4 style="font-size: 14px;">140г</h4>
+                            </div>
+                            <div style="text-align: center;">
+                                <p style="font-size: 10px; color: var(--gray);">ЖИРЫ</p>
+                                <h4 style="font-size: 14px;">60г</h4>
+                            </div>
+                        </div>
+                        <button class="btn-duo clickable" onclick="nav('s-dashboard')" style="box-shadow: 0 4px 0 var(--green-shadow); font-size: 14px; padding: 12px;">Принять новый план</button>
+                        <p class="clickable" onclick="goBack()" style="text-align: center; font-size: 11px; color: var(--gray); margin-top: 15px; text-decoration: underline;">Оставить старый план</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Архитектурная карта (Подсказки) -->
+    <div class="architecture-guide">
+        <h2 style="font-size: 20px; color: var(--dark-nav);"><i class="fa-solid fa-map-location-dot" style="color: var(--blue);"></i> Архитектура продукта</h2>
+        <p style="font-size: 13px; color: var(--text-sub); margin-bottom: 5px;">Кликайте на элементы в телефоне, чтобы протестировать интеграцию логики.</p>
+        
+        <div class="guide-step">
+            <h4>1. Кольца активности (Сводка)</h4>
+            <p>На <b>Главном экране</b> теперь добавлены круговые SVG-диаграммы (Вода, Ккал, Шаги) точь-в-точь как на вашем референсе. Кликните на кольцо Калорий, чтобы перейти в дневник.</p>
+        </div>
+        <div class="guide-step">
+            <h4>2. MacroFactor: Ядро</h4>
+            <p>Сразу под кругами расположены 2 карточки. Левая покажет вам <b>Сглаживание веса (EWMA)</b>, правая — <b>Еженедельную калибровку метаболизма</b>.</p>
+        </div>
+        <div class="guide-step">
+            <h4>3. Умный Pill-Box</h4>
+            <p>Кликните на карточку-уведомление «Пора принять БАДы» на главном экране (внизу).</p>
+        </div>
+        <div class="guide-step">
+            <h4>4. MLM Интеграция и Чат</h4>
+            <p>Через Нижнее меню зайдите в «Протокол» <i class="fa-solid fa-calendar-check"></i>, затем кликните на <b>Аватарку доктора</b> (с красной точкой) сверху. Вы увидите авто-продажу добавок в чате.</p>
+        </div>
+    </div>
+
+    <!-- JavaScript Логика переходов -->
+    <script>
+        let historyStack = ['s-onboarding'];
+
+        function nav(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+            
+            if (historyStack[historyStack.length - 1] !== screenId) {
+                historyStack.push(screenId);
+            }
+        }
+
+        function goBack() {
+            if (historyStack.length > 1) {
+                historyStack.pop(); 
+                let prevScreen = historyStack[historyStack.length - 1];
+                
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById(prevScreen).classList.add('active');
+            }
+        }
+    </script>
+</body>
+</html>
